@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/gorilla/mux"
 	"github.com/mukulmantosh/mongoapi/models"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -45,7 +46,6 @@ func insertOneMovie(movie models.Netflix) {
 		log.Fatal(err)
 	}
 	fmt.Println("Inserted 1 movie in db with id: ", data.InsertedID)
-
 }
 
 // update one record
@@ -111,9 +111,48 @@ func getAllMovies() []primitive.M {
 }
 
 // Actual controller - file
-func GetMyAllMovies(writer http.ResponseWriter, reader *http.Request) {
+
+func GetMyAllMovies(writer http.ResponseWriter, request *http.Request) {
 	writer.Header().Set("Content-Type", "application/json")
 	allMovies := getAllMovies()
 	json.NewEncoder(writer).Encode(allMovies)
 	return
+}
+
+func CreateMovie(writer http.ResponseWriter, request *http.Request) {
+	writer.Header().Set("Content-Type", "application/json")
+	writer.Header().Set("Access-Control-Allow-Methods", "POST")
+
+	var movie models.Netflix
+	json.NewDecoder(request.Body).Decode(&movie)
+	insertOneMovie(movie)
+	json.NewEncoder(writer).Encode(movie)
+}
+
+func MarkAsWatched(writer http.ResponseWriter, request *http.Request) {
+	writer.Header().Set("Content-Type", "application/json")
+	writer.Header().Set("Access-Control-Allow-Methods", "PUT")
+
+	params := mux.Vars(request)
+	updateOneMovie(params["id"])
+
+	json.NewEncoder(writer).Encode(map[string]interface{}{"status": true, "message": "Updated!"})
+}
+
+func DeleteAMovie(writer http.ResponseWriter, request *http.Request) {
+	writer.Header().Set("Content-Type", "application/json")
+	writer.Header().Set("Access-Control-Allow-Methods", "DELETE")
+
+	params := mux.Vars(request)
+
+	deleteOneMovie(params["id"])
+	json.NewEncoder(writer).Encode(map[string]string{"status": "true", "message": "One Movie Deleted!"})
+}
+
+func DeleteAllMovie(writer http.ResponseWriter, request *http.Request) {
+	writer.Header().Set("Content-Type", "application/json")
+	writer.Header().Set("Access-Control-Allow-Methods", "DELETE")
+
+	deleteAllMovie()
+	json.NewEncoder(writer).Encode(map[string]string{"status": "true", "message": "All Movies Deleted!"})
 }
